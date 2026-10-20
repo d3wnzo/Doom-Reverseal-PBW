@@ -1,156 +1,1319 @@
-# DOOM REVERSAL — PHP native + MySQL/MariaDB
+# ⚡ DOOM REVERSAL — E-Commerce & Everyday Essentials Web Project
 
-Website toko pakaian berdasarkan UI dalam Downloads.zip dan materi PBW pertemuan 1–7. Versi ini memakai **database SQL**, bukan file JSON. Source PHP, gambar, CSS dan JavaScript tersedia lokal. Checkout dan pembayaran tetap simulasi tugas.
+<div align="center">
 
-## Instalasi XAMPP
+![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.0-blue?style=for-the-badge&logo=php)
+![Database](https://img.shields.io/badge/Database-MySQL%2FMariaDB-orange?style=for-the-badge&logo=mysql)
+![Security](https://img.shields.io/badge/Security-PDO%20%7C%20CSRF%20%7C%20XSS-success?style=for-the-badge)
+![License](https://img.shields.io/badge/License-Academic-lightgrey?style=for-the-badge)
 
-1. Ekstrak ZIP, salin folder `doom-reversal` ke `C:\xampp\htdocs\`.
-2. Pastikan `C:\xampp\htdocs\doom-reversal\index.php` tersedia langsung, tanpa folder proyek berlapis.
-3. Nyalakan **Apache dan MySQL** melalui XAMPP Control Panel.
-4. Buka `http://localhost/phpmyadmin/`.
-5. Pada tab **Import**, pilih `doom-reversal/database/doom_reversal.sql`, lalu klik Import/Go.
-6. SQL membuat database **doom_reversal**, lima tabel, dan 13 produk awal. Tidak ada akun bawaan.
-7. Buka **http://localhost/doom-reversal/**. Klik ikon akun, Register, buat akun demo sendiri.
+*“When the end feels near, turn it around and start again.”*
 
-## Instalasi Laragon
+</div>
 
-1. Salin folder `doom-reversal` ke `C:\laragon\www\` atau document root yang kamu atur.
-2. Klik **Start All** untuk menyalakan web server dan MySQL/MariaDB.
-3. Import `database/doom_reversal.sql` melalui phpMyAdmin jika tersedia, atau menu database/HeidiSQL Laragon. Pada HeidiSQL, buka koneksi lokal, pilih File > Load SQL file, lalu jalankan file SQL.
-4. Buka **http://localhost/doom-reversal/**. Auto Virtual Hosts Laragon juga dapat memberi alamat `http://doom-reversal.test` setelah Reload.
+---
 
-Laragon tertentu belum menyertakan phpMyAdmin. Import juga dapat dilakukan lewat terminal dengan client MySQL:
+## 📖 Tentang Proyek
 
-```bat
-mysql -u root -p < database\doom_reversal.sql
+**Doom Reversal** adalah aplikasi web e-commerce berbasis **PHP Native** yang dikembangkan sebagai proyek tugas akhir mata kuliah Pemrograman Berbasis Web. Mengusung konsep *brand* pakaian modern (hoodie dan *everyday essentials*), aplikasi ini dirancang dengan struktur kode yang bersih (*clean code*), modular, serta menerapkan standar keamanan web modern tanpa menggunakan *framework* pihak ketiga.
+
+Proyek ini dibangun secara kolaboratif oleh tim beranggotakan 5 orang (**Krisna, Fariz, Abay, Nafero, dan Dika**) dengan menerapkan pemisahan tanggung jawab (*separation of concerns*) yang ketat pada arsitektur backend, manajemen database, routing, dan keamanan sesi.
+
+---
+
+## ✨ Fitur Utama (Backend Focus)
+
+1. **Front Controller & Dynamic Routing (`index.php`)**: Semua permintaan (*requests*) berpusat pada satu pintu masuk menggunakan sistem *whitelist routing* yang aman dari celah *Local File Inclusion* (LFI).
+2. **Katalog Produk & Filter Canggih**: Fitur penjelajahan produk berdasarkan kategori (*Men, Women, Pants, Kids*), pencarian real-time berdasarkan nama atau warna, serta pengurutan berdasarkan harga dan nama alfabetis.
+3. **Manajemen Keranjang Belanja (*Cart Management*)**: Pengelolaan item keranjang berbasis *session* dengan perulangan `while` dan validasi kuantitas yang ketat (maksimal 20 item per varian ukuran) serta kalkulasi diskon otomatis 10% jika subtotal mencapai $\ge$ Rp 900.000 menggunakan *accumulator* pada perulangan `for`.
+4. **Sistem Autentikasi Pengguna**: Fitur registrasi dan login lengkap dengan *password hashing* (`password_hash`), regenerasi ID sesi untuk mencegah *Session Fixation*, pembatasan percobaan login (*login throttling*), serta proteksi halaman privat (*account*, *checkout*, *payment*).
+5. **Simulasi Checkout & Pembayaran dengan Database Transactions**: Alur pemesanan lengkap menggunakan `beginTransaction()`, `commit()`, dan `rollBack()` untuk menjamin konsistensi data antara tabel `orders`, `order_items`, dan `payments`.
+6. **Laporan Keranjang Cetak (`Report`)**: Fitur rekapitulasi data belanja menggunakan perulangan terstruktur, *accumulator*, dan fungsi cetak browser (`window.print()`).
+7. **Database Error Handling (`Setup Help`)**: Halaman panduan konfigurasi lokal otomatis jika koneksi database belum terhubung, tanpa membocorkan informasi kredensial sensitif.
+
+---
+
+## 🛠️ Tech Stack & Arsitektur Keamanan
+
+* **Bahasa Pemrograman**: PHP (Strict Types enabled `declare(strict_types=1);`)
+* **Manajemen Database**: MySQL / MariaDB via **PDO (PHP Data Objects)** menggunakan *Singleton Pattern* untuk efisiensi koneksi.
+* **Keamanan Tingkat Lanjut**: 
+  * **Native Prepared Statements**: Mencegah celah *SQL Injection* secara total pada seluruh query dinamis dengan menonaktifkan `EMULATE_PREPARES`.
+  * **CSRF Protection**: Token validasi acak 32-byte pada setiap pengiriman formulir metode POST yang divalidasi dengan `hash_equals()`.
+  * **Output Escaping**: Fungsi `e()` (`htmlspecialchars`) untuk mencegah serangan *Cross-Site Scripting (XSS)*.
+  * **Secure Session**: Parameter cookie `httponly`, `samesite=Lax`, dan regenerasi ID session pada titik autentikasi sensitif.
+
+---
+
+## 📁 Struktur Direktori Proyek
+
+```text
+doom-reversal/
+│
+├── assets/
+│   ├── images/          # Aset gambar produk dan logo brand
+│   ├── style.css        # Berkas lembar gaya (CSS) utama
+│   └── app.js           # Skrip pendukung interaksi frontend (JavaScript)
+│
+├── config/
+│   └── database.php     # Konfigurasi koneksi database PDO (Singleton)
+│
+├── database/
+│   └── doom_reversal.sql # Berkas dump SQL inisialisasi tabel dan data produk
+│
+├── includes/
+│   ├── actions.php      # Pemrosesan request form (Cart, Login, Checkout, Pay)
+│   ├── bootstrap.php    # Konfigurasi sesi, konstanta global, dan fungsi utilitas
+│   ├── database.php     # Pengelola koneksi database PDO (Singleton)
+│   ├── layout.php       # Komponen modular UI (headerView, footerView, card)
+│   └── products.php     # Inisialisasi data produk dari database ke array asosiatif
+│
+├── setup-help.php       # Halaman panduan otomatis jika koneksi database gagal
+└── index.php            # Front Controller & Router utama aplikasi
 ```
 
-Perintah dijalankan dari folder doom-reversal. Masukkan password MySQL ketika diminta, atau tekan Enter bila password kosong. Client mysql harus tersedia di PATH/terminal Laragon.
+---
 
-## Koneksi database
+## ⚙️ Panduan Instalasi & Menjalankan Proyek
 
-File `config/database.php` memiliki konfigurasi awal:
+1. **Clone atau Unduh Repository**  
+   Letakkan folder proyek ke dalam direktori server lokal Anda (`htdocs/doom-reversal` di XAMPP atau `www/doom-reversal` di Laragon).
 
+2. **Nyalakan Server Lokal**  
+   Pastikan layanan **Apache** dan **MySQL** sudah dalam keadaan aktif (*Running*).
+
+3. **Buat Database Baru**  
+   * Buka **phpMyAdmin** melalui browser (`http://localhost/phpmyadmin`).
+   * Buat database baru dengan nama: `doom_reversal`.
+
+4. **Import Database**  
+   * Pilih database `doom_reversal` yang baru dibuat.
+   * Klik tab **Import**, lalu pilih file `database/doom_reversal.sql` dari folder proyek.
+   * Klik **Go** / **Kirim** untuk menyelesaikan proses import.
+
+5. **Verifikasi Konfigurasi Database**  
+   Periksa file `includes/database.php` untuk memastikan konfigurasi *host*, *port*, *username*, dan *password* sudah sesuai dengan pengaturan server lokal Anda.
+
+6. **Akses Aplikasi**  
+   Buka browser dan akses URL berikut:
+   ```text
+   http://localhost/doom-reversal/index.php
+   ```
+
+---
+
+## 👥 PEMBAGIAN TUGAS PRESENTASI BACKEND (5 ANGGOTA)
+
+Dokumen ini menjadi acuan utama seluruh anggota tim (**Krisna, Fariz, Abay, Nafero, Dika**) saat presentasi dan uji kodingan di depan dosen/asdos.
+
+---
+
+### 1️⃣ KRISNA — Front Controller, Routing & Error Handling Fallback
+* **File yang Dijelaskan**: `index.php` & `setup-help.php`
+* **Naskah & Poin Penjelasan Teknis**:
+  1. **Konsep Front Controller (`index.php`)**: *"Di `index.php`, kami menerapkan pola arsitektur **Front Controller**. Seluruh request dari pengguna berpusat di satu pintu masuk ini, sehingga kontrol atas session, keamanan, dan pemuatan dependensi menjadi jauh lebih terpusat dan mudah diawasi."*
+  2. **Whitelist Routing & Proteksi LFI**: *"Sistem navigasi menggunakan sistem whitelist pada array `$allowed`. Jika parameter `?page=` tidak terdaftar atau mencoba disusupi oleh penyerang (misal mencoba Local File Inclusion), sistem otomatis memblokirnya dan melempar status HTTP `404`."*
+  3. **Error Handling & Graceful Degradation (`setup-help.php`)**: *"Jika koneksi database gagal atau belum di-import, aplikasi tidak akan membiarkan error PHP mentah terekspos. Blok penanganan error langsung mengalihkan tampilan ke `setup-help.php` dengan status HTTP `503`, menjaga keamanan kredensial sistem."*
+
+---
+
+### 2️⃣ FARIZ — Business Logic, Transaction Handler & Data Mapping
+* **File yang Dijelaskan**: `actions.php` & `products.php`
+* **Naskah & Poin Penjelasan Teknis**:
+  1. **Pengendali Logika POST (`actions.php`)**: *"File `actions.php` adalah pusat pemrosesan data POST, mulai dari manajemen keranjang belanja, autentikasi user, hingga proses checkout."*
+  2. **Database Transactions (`beginTransaction`, `commit`, `rollBack`)**: *"Pada proses checkout dan pembayaran, kami menerapkan transaksi database penuh. Jika terjadi kegagalan di tengah jalan saat menyimpan tabel `orders`, `order_items`, atau `payments`, sistem otomatis menjalankan `rollBack()` untuk menjaga agar data tidak korup atau tersimpan setengah-setengah."*
+  3. **Data Mapping Produk (`products.php`)**: *"Melalui `products.php`, data produk ditarik dari database menggunakan PDO lalu dipetakan (*mapping*) ke dalam array asosiatif berbasis ID produk, lengkap dengan casting tipe data eksplisit agar performa akses di seluruh halaman menjadi sangat cepat."*
+
+---
+
+### 3️⃣ ABAY — Core Foundation, Sesi Aman & Proteksi CSRF/XSS
+* **File yang Dijelaskan**: `bootstrap.php` (Bagian Sesi & Keamanan)
+* **Naskah & Poin Penjelasan Teknis**:
+  1. **Inisialisasi Sesi Aman**: *"Di `bootstrap.php`, kami mengonfigurasi cookie sesi secara ketat menggunakan parameter `httponly => true` dan `samesite => 'Lax'`. Ini berfungsi mutlak untuk membentengi aplikasi dari pencurian sesi via JavaScript (*XSS Cookie Theft*) dan serangan lintas situs (*CSRF*)."*
+  2. **Proteksi CSRF Token**: *"Setiap formulir POST wajib menyertakan token acak kriptografis 32-byte yang divalidasi menggunakan fungsi `hash_equals()`. Mekanisme ini mencegah serangan Timing Attack dan memastikan form tidak bisa dibajak oleh situs luar."*
+  3. **Sanitasi Output XSS (`e()`)**: *"Seluruh data yang dicetak kembali ke layar wajib melewati fungsi `e()` yang membungkus `htmlspecialchars()`, melumpuhkan potensi injeksi skrip berbahaya dari pengguna."*
+
+---
+
+### 4️⃣ NAFERO — Akumulator Keuangan & Cart Management
+* **File yang Dijelaskan**: `bootstrap.php` (Bagian Logika Keranjang & Diskon)
+* **Naskah & Poin Penjelasan Teknis**:
+  1. **Pengolahan Keranjang Menggunakan `while`**: *"Untuk membaca item di dalam keranjang sesi, kami memanfaatkan perulangan terstruktur **`while`** yang dikombinasikan dengan fungsi `array_keys()` guna memastikan setiap varian produk (berdasarkan ukuran dan ID) terbaca secara akurat."*
+  2. **Kalkulasi Akumulator Menggunakan `for`**: *"Perhitungan total subtotal belanja dikerjakan oleh fungsi `totals()` menggunakan perulangan **`for`** dengan konsep *accumulator* (`$subtotal += ...`) untuk menjumlahkan seluruh harga item secara iteratif."*
+  3. **Otomatisasi Diskon 10%**: *"Sistem secara otomatis mengecek ambang batas diskon (`DISCOUNT_THRESHOLD` sebesar Rp 900.000). Jika subtotal memenuhi syarat, sistem memotong harga sebesar 10% secara presisi tanpa ada selisih hitung."*
+
+---
+
+### 5️⃣ DIKA — Database Connection & Singleton PDO Security
+* **File yang Dijelaskan**: `database.php`
+* **Naskah & Poin Penjelasan Teknis**:
+  1. **Singleton Pattern**: *"Koneksi database dielola melalui fungsi `db()` di dalam `database.php` dengan menerapkan **Singleton Pattern** menggunakan variabel `static $connection`. Ini memastikan koneksi database hanya dibuka sekali saja selama siklus request HTTP, sehingga menghemat sumber daya server."*
+  2. **Konfigurasi Atribut PDO**: *"Kami mengonfigurasi PDO secara ketat dengan mengaktifkan `ERRMODE_EXCEPTION` agar error database tertangkap dengan rapi, dan menetapkan *default fetch mode* sebagai *Assoc Array*."*
+  3. **Proteksi SQL Injection**: *"Yang paling krusial, kami menonaktifkan emulasi prepared statements (`EMULATE_PREPARES => false`). Ini memaksa MySQL menggunakan *Native Prepared Statements* secara penuh, menutup celah **SQL Injection** secara total pada seluruh query aplikasi."*
+
+---
+
+## 💻 Source Code Lengkap Proyek
+
+Berikut adalah seluruh berkas kodingan backend utama proyek **Doom Reversal** sebagai referensi cepat selama presentasi:
+
+### 1. `index.php` (Front Controller & Dynamic Router)
 ```php
-return [
-    'host' => '127.0.0.1',
-    'port' => 3306,
-    'database' => 'doom_reversal',
-    'username' => 'root',
-    'password' => '',
-];
+<?php
+require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/actions.php';
+require __DIR__ . '/includes/layout.php';
+
+$page = is_string($_GET['page'] ?? null) ? $_GET['page'] : 'home';
+$allowed = ['home', 'catalog', 'product', 'cart', 'checkout', 'login', 'register', 'account', 'help', 'report', 'payment'];
+
+if (!in_array($page, $allowed, true)) {
+    http_response_code(404);
+    $page = '404';
+}
+
+if (in_array($page, ['account', 'checkout', 'payment'], true) && empty($_SESSION['user'])) {
+    flash('Login dulu untuk melanjutkan.');
+    go('index.php?page=login');
+}
+
+$p = $page === 'product' ? ($products[(int)($_GET['id'] ?? 0)] ?? null) : null;
+
+if ($page === 'product' && !$p) {
+    http_response_code(404);
+    $page = '404';
+}
+
+$paymentOrder = null;
+if ($page === 'payment') {
+    $statement = db()->prepare('SELECT o.*, p.method, p.status AS payment_status, p.reference, p.paid_at FROM orders o JOIN payments p ON p.order_id=o.id WHERE o.id=? AND o.user_id=?');
+    $statement->execute([(int)($_GET['order'] ?? 0), $_SESSION['user']['id']]);
+    $paymentOrder = $statement->fetch();
+    if (!$paymentOrder) {
+        http_response_code(404);
+        $page = '404';
+    }
+}
+
+headerView($page);
+
+if ($error): 
+?>
+    <div role="alert" class="error"><?= e($error) ?></div>
+<?php 
+endif;
+
+if ($page === 'home'): 
+?>
+    <main>
+        <section class="hero">
+            <div class="hero-photos">
+                <img src="assets/images/men-5.jpg" alt="Signature Hoodie navy">
+                <img src="assets/images/men-4.jpg" alt="Signature Hoodie black">
+            </div>
+            <div class="hero-copy">
+                <p class="eyebrow">THE EVERYDAY COLLECTION / 2026</p>
+                <h1>DOOM IS COOL<br>HOODIES</h1>
+                <a class="button light" href="index.php?page=catalog&amp;category=Men">Explore hoodies <?= icon('arrow') ?></a>
+            </div>
+        </section>
+
+        <section class="intro">
+            <p class="eyebrow">TURN IT AROUND.</p>
+            <h2>Doom is temporary.<br>Reversal is the ultimate move.</h2>
+            <p>Explore our signature hoodie collection engineered for those who flip the script on despair.</p>
+        </section>
+
+        <section class="campaign">
+            <img src="assets/images/men-3.jpg" alt="Signature Hoodie burgundy" loading="lazy">
+            <div>
+                <p class="eyebrow">BUILT FOR YOUR NEXT CHAPTER</p>
+                <h2>DOOM REVERSAL<br>SIGNATURE HOODIE</h2>
+                <p>When everything feels like it’s falling apart.</p>
+                <a class="text-link" href="index.php?page=product&amp;id=3">Find your signature <?= icon('arrow') ?></a>
+            </div>
+        </section>
+
+        <section class="split">
+            <a href="index.php?page=catalog&amp;category=Men">
+                <img src="assets/images/men-5.jpg" alt="Koleksi pria" loading="lazy">
+                <div>
+                    <h2>Feel The Fit</h2>
+                    <span>SHOP MEN <?= icon('arrow') ?></span>
+                </div>
+            </a>
+            <a href="index.php?page=catalog&amp;category=Women">
+                <img src="assets/images/women-4.jpg" alt="Koleksi wanita" loading="lazy">
+                <div>
+                    <h2>Own Your Everyday</h2>
+                    <span>SHOP WOMEN <?= icon('arrow') ?></span>
+                </div>
+            </a>
+        </section>
+
+        <section class="featured container">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">THE ROTATION</p>
+                    <h2>Everyday essentials.</h2>
+                </div>
+                <a class="text-link" href="index.php?page=catalog">View all <?= icon('arrow') ?></a>
+            </div>
+            <div class="grid">
+                <?php 
+                $featured = array_slice(array_values($products), 0, 3); 
+                for ($i = 0; $i < count($featured); $i++) {
+                    card($featured[$i]); 
+                }
+                ?>
+            </div>
+        </section>
+
+        <section class="pants-banner">
+            <img src="assets/images/pants.jpg" alt="Relic Everyday Chino Pants" loading="lazy">
+            <div>
+                <p class="eyebrow">BUILT FOR MOVEMENT, CUT FOR THE STREETS</p>
+                <h2 class="visually-hidden">Relic Everyday.</h2>
+                <a class="button" href="index.php?page=product&amp;id=13">Explore pants <?= icon('arrow') ?></a>
+            </div>
+        </section>
+    </main>
+
+<?php 
+elseif ($page === 'catalog'):
+    $category = is_string($_GET['category'] ?? null) ? $_GET['category'] : '';
+    $q = is_string($_GET['q'] ?? null) ? trim($_GET['q']) : '';
+    $sort = is_string($_GET['sort'] ?? null) ? $_GET['sort'] : '';
+    $list = [];
+
+    foreach ($products as $prod) {
+        if (($category === '' || $prod['category'] === $category) && ($q === '' || stripos($prod['name'] . ' ' . $prod['color'], $q) !== false)) {
+            $list[] = $prod;
+        }
+    }
+
+    if ($sort === 'price-low') {
+        usort($list, function($a, $b) { return $a['price'] <=> $b['price']; });
+    } elseif ($sort === 'name') {
+        usort($list, function($a, $b) { return strcmp($a['name'], $b['name']); });
+    }
+
+    $pages = max(1, (int)ceil(count($list) / 6)); 
+    $current = max(1, min($pages, (int)($_GET['p'] ?? 1))); 
+    $shown = array_slice($list, ($current - 1) * 6, 6);
+?>
+    <main class="container catalog">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">DOOM REVERSAL / COLLECTION</p>
+                <h1><?= e($category ?: 'All essentials') ?></h1>
+                <p class="muted"><?= count($list) ?> produk · Pilih gayamu.</p>
+            </div>
+            <a class="text-link" href="index.php?page=catalog">Semua koleksi <?= icon('arrow') ?></a>
+        </div>
+
+        <form class="filters" method="get">
+            <input type="hidden" name="page" value="catalog">
+            <input type="hidden" name="category" value="<?= e($category) ?>">
+            <label class="search-field">Cari produk
+                <input name="q" value="<?= e($q) ?>" placeholder="Nama produk atau warna...">
+            </label>
+            <label>Urutkan
+                <select name="sort">
+                    <option value="">Rekomendasi</option>
+                    <option value="name" <?= $sort === 'name' ? 'selected' : '' ?>>Nama A–Z</option>
+                    <option value="price-low" <?= $sort === 'price-low' ? 'selected' : '' ?>>Harga terendah</option>
+                </select>
+            </label>
+            <button class="button">Terapkan</button>
+        </form>
+
+        <?php if (!$shown): ?>
+            <div class="empty">
+                <h2><?= $category === 'Kids' ? 'Koleksi Kids segera hadir.' : 'Produk belum ditemukan.' ?></h2>
+                <p><?= $category === 'Kids' ? 'Referensi yang diberikan belum menyertakan produk Kids.' : 'Coba nama lain atau lihat semua koleksi.' ?></p>
+                <a class="button" href="index.php?page=catalog">Lihat koleksi</a>
+            </div>
+        <?php else: ?>
+            <div class="grid">
+                <?php for ($i = 0; $i < count($shown); $i++) card($shown[$i]); ?>
+            </div>
+        <?php endif; ?>
+
+        <nav class="pagination" aria-label="Halaman katalog">
+            <?php for ($i = 1; $i <= $pages; $i++): ?>
+                <a <?= $current === $i ? 'aria-current="page"' : '' ?> href="index.php?<?= e(http_build_query(['page' => 'catalog', 'category' => $category, 'q' => $q, 'sort' => $sort, 'p' => $i])) ?>"><?= $i ?></a>
+            <?php endfor; ?>
+        </nav>
+    </main>
+
+<?php 
+elseif ($page === 'product'): 
+?>
+    <main class="container product">
+        <div class="breadcrumb"><a href="index.php?page=catalog&amp;category=<?= e($p['category']) ?>"><?= e($p['category']) ?></a> / <?= e($p['name']) ?></div>
+        <div class="product-layout">
+            <div>
+                <img class="product-photo" src="assets/images/<?= e($p['image']) ?>" alt="<?= e($p['name'] . ' ' . $p['color']) ?>">
+            </div>
+            <div class="product-copy">
+                <p class="eyebrow">DOOM REVERSAL / <?= e($p['category']) ?></p>
+                <h1><?= e($p['name']) ?></h1>
+                <p class="description">Born from chaos, built for resilience. An everyday essential made for your next chapter. Turn despair into your ultimate armor.</p>
+                <p class="price large"><?= rupiah($p['price']) ?></p>
+                <p>Color: <strong><?= e($p['color']) ?></strong></p>
+                
+                <form method="post">
+                    <?= tokenField() ?>
+                    <input type="hidden" name="action" value="add">
+                    <input type="hidden" name="id" value="<?= $p['id'] ?>">
+                    
+                    <fieldset class="sizes">
+                        <legend>Choose size <span aria-hidden="true">*</span></legend>
+                        <?php for ($i = 0; $i < count(SIZES); $i++): ?>
+                            <label>
+                                <input type="radio" name="size" value="<?= SIZES[$i] ?>" required <?= field('size') === SIZES[$i] ? 'checked' : '' ?>>
+                                <span><?= SIZES[$i] ?></span>
+                            </label>
+                        <?php endfor; ?>
+                    </fieldset>
+                    
+                    <label class="quantity">Quantity
+                        <input type="number" name="qty" min="1" max="20" value="1" required>
+                    </label>
+                    
+                    <button class="button full">ADD TO BAG <?= icon('cart') ?></button>
+                </form>
+                
+                <p class="muted">Diskon 10% untuk subtotal mulai Rp 900.000.</p>
+                
+                <details>
+                    <summary>Size &amp; Fit</summary>
+                    <p>Ukuran berikut adalah panduan simulasi tugas, bukan ukuran resmi produk.</p>
+                    <table>
+                        <thead>
+                            <tr><th>Size</th><th>Chest</th><th>Length</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                            $measure = [['S', '100 cm', '66 cm'], ['M', '106 cm', '68 cm'], ['L', '112 cm', '70 cm'], ['XL', '118 cm', '72 cm']]; 
+                            for ($i = 0; $i < count($measure); $i++): 
+                            ?>
+                                <tr>
+                                    <?php for ($j = 0; $j < count($measure[$i]); $j++): ?>
+                                        <td><?= e($measure[$i][$j]) ?></td>
+                                    <?php endfor; ?>
+                                </tr>
+                            <?php endfor; ?>
+                        </tbody>
+                    </table>
+                </details>
+                
+                <details>
+                    <summary>Product details</summary>
+                    <p><?= $p['category'] === 'Pants' ? 'Chino pants untuk koleksi everyday.' : 'Hoodie dalam koleksi essentials.' ?> Gambar diambil dari UI referensi. Deskripsi merupakan teks presentasi untuk proyek pembelajaran.</p>
+                </details>
+                
+                <details>
+                    <summary>Reviews</summary>
+                    <p>Belum ada ulasan. Angka “300” pada mockup tidak dipakai sebagai ulasan nyata.</p>
+                </details>
+            </div>
+        </div>
+    </main>
+
+<?php 
+elseif ($page === 'cart' || $page === 'checkout' || $page === 'report'):
+    $rows = cartRows();
+    $total = totals($rows); 
+?>
+    <main class="container cart">
+        <p class="eyebrow">YOUR EVERYDAY ROTATION</p>
+        <h1><?= $page === 'checkout' ? 'Checkout' : ($page === 'report' ? 'Laporan keranjang' : 'Your bag') ?></h1>
+        
+        <?php if (!$rows): ?>
+            <div class="empty">
+                <h2>Keranjang masih kosong.</h2>
+                <p>Temukan essential untuk hari-harimu.</p>
+                <a class="button" href="index.php?page=catalog">Explore the collection <?= icon('arrow') ?></a>
+            </div>
+        <?php else: ?>
+            <div class="cart-layout">
+                <div>
+                    <?php if ($page === 'report'): ?>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr><th>No</th><th>Produk</th><th>Ukuran</th><th>Harga</th><th>Qty</th><th>Subtotal</th></tr>
+                                </thead>
+                                <tbody>
+                                    <?php for ($i = 0; $i < count($rows); $i++): $r = $rows[$i]; ?>
+                                        <tr>
+                                            <td><?= $i + 1 ?></td>
+                                            <td><?= e($r['product']['name']) ?></td>
+                                            <td><?= e($r['size']) ?></td>
+                                            <td><?= rupiah($r['product']['price']) ?></td>
+                                            <td><?= $r['qty'] ?></td>
+                                            <td><?= rupiah($r['subtotal']) ?></td>
+                                        </tr>
+                                    <?php endfor; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="muted">Laporan menggunakan FOR, accumulator, diskon, dan escaping nama produk.</p>
+                        <button class="button" type="button" onclick="window.print()">Cetak laporan</button>
+                    <?php else: ?>
+                        <?php for ($i = 0; $i < count($rows); $i++): $r = $rows[$i]; ?>
+                            <article class="cart-row">
+                                <a href="index.php?page=product&amp;id=<?= $r['product']['id'] ?>">
+                                    <img src="assets/images/<?= e($r['product']['image']) ?>" alt="<?= e($r['product']['name']) ?>">
+                                </a>
+                                <div>
+                                    <h3><?= e($r['product']['name']) ?></h3>
+                                    <p class="muted"><?= e($r['product']['color']) ?> / Size <?= e($r['size']) ?></p>
+                                    <p><?= rupiah($r['product']['price']) ?></p>
+                                    
+                                    <?php if ($page === 'cart'): ?>
+                                        <form class="cart-controls" method="post">
+                                            <?= tokenField() ?>
+                                            <input type="hidden" name="key" value="<?= e($r['key']) ?>">
+                                            <label>Qty
+                                                <input name="qty" type="number" min="1" max="20" value="<?= $r['qty'] ?>" required>
+                                            </label>
+                                            <button name="action" value="update">Update</button>
+                                            <button name="action" value="remove" formnovalidate>Hapus</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <p>Jumlah: <?= $r['qty'] ?></p>
+                                    <?php endif; ?>
+                                </div>
+                                <strong><?= rupiah($r['subtotal']) ?></strong>
+                            </article>
+                        <?php endfor; ?>
+                        
+                        <?php if ($page === 'checkout'): ?>
+                            <section class="checkout-form">
+                                <h2>Alamat pengiriman</h2>
+                                <p class="muted">Simulasi lokal. Tidak ada pembayaran atau pengiriman nyata.</p>
+                                <form method="post">
+                                    <?= tokenField() ?>
+                                    <input type="hidden" name="action" value="checkout">
+                                    <label>Nama penerima
+                                        <input name="name" maxlength="100" value="<?= e(field('name') ?: $_SESSION['user']['name']) ?>" required>
+                                    </label>
+                                    <label>Nomor telepon
+                                        <input name="phone" type="tel" minlength="8" maxlength="20" value="<?= e(field('phone')) ?>" required>
+                                    </label>
+                                    <label>Alamat lengkap
+                                        <textarea name="address" minlength="10" maxlength="1000" rows="4" required><?= e(field('address')) ?></textarea>
+                                    </label>
+                                    <button class="button full">Konfirmasi pesanan simulasi <?= icon('arrow') ?></button>
+                                </form>
+                            </section>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+
+                <aside class="summary">
+                    <p class="eyebrow">ORDER SUMMARY</p>
+                    <h2>Your next chapter.</h2>
+                    <dl>
+                        <div>
+                            <dt>Subtotal</dt>
+                            <dd><?= rupiah($total['subtotal']) ?></dd>
+                        </div>
+                        <div>
+                            <dt>Diskon <?= $total['discount'] ? '10%' : '' ?></dt>
+                            <dd>− <?= rupiah($total['discount']) ?></dd>
+                        </div>
+                        <div>
+                            <dt>Pengiriman (simulasi)</dt>
+                            <dd>Gratis</dd>
+                        </div>
+                        <div class="grand">
+                            <dt>Total</dt>
+                            <dd><?= rupiah($total['total']) ?></dd>
+                        </div>
+                    </dl>
+                    
+                    <?php if ($page === 'cart'): ?>
+                        <a class="button full" href="index.php?page=checkout">CHECKOUT <?= icon('arrow') ?></a>
+                        <a class="text-link" href="index.php?page=report">Lihat laporan keranjang</a>
+                    <?php endif; ?>
+                    
+                    <p class="muted">Diskon otomatis 10% untuk subtotal minimal Rp 900.000.</p>
+                    <a href="index.php?page=catalog" class="text-link">Continue shopping</a>
+                </aside>
+            </div>
+        <?php endif; ?>
+    </main>
+
+<?php 
+elseif ($page === 'login' || $page === 'register'): 
+    $register = $page === 'register'; 
+?>
+    <main class="auth">
+        <a href="index.php"><img class="auth-logo" src="assets/images/logo.png" alt="DOOM REVERSAL"></a>
+        <h1><?= $register ? 'Register' : 'Login' ?></h1>
+        <p class="muted"><?= $register ? 'Start your next chapter.' : 'Welcome back. Turn it around.' ?></p>
+        
+        <form method="post">
+            <?= tokenField() ?>
+            <input type="hidden" name="action" value="<?= $page ?>">
+            
+            <?php if ($register): ?>
+                <div class="two-fields">
+                    <label>First name
+                        <input name="first" maxlength="80" placeholder="first name*" value="<?= e(field('first')) ?>" autocomplete="given-name" required>
+                    </label>
+                    <label>Last name
+                        <input name="last" maxlength="80" value="<?= e(field('last')) ?>" placeholder="last name" autocomplete="family-name">
+                    </label>
+                </div>
+            <?php endif; ?>
+            
+            <label>Email
+                <input name="email" type="email" maxlength="190" value="<?= e(field('email')) ?>" placeholder="email*" autocomplete="email" required>
+            </label>
+            
+            <label>Password
+                <div class="password-field">
+                    <input id="password" name="password" type="password" <?= $register ? 'minlength="8" maxlength="72"' : '' ?> placeholder="password*" autocomplete="<?= $register ? 'new-password' : 'current-password' ?>" required>
+                    <button type="button" data-password="password" aria-label="Tampilkan password">Show</button>
+                </div>
+            </label>
+            
+            <?php if ($register): ?>
+                <label>Confirm password
+                    <input name="confirm" type="password" minlength="8" maxlength="72" placeholder="confirm password*" autocomplete="new-password" required>
+                </label>
+                <p class="muted">Password minimal 8 karakter. Akun tersimpan di komputer lokal.</p>
+            <?php else: ?>
+                <div class="auth-options">
+                    <span class="muted">Login berlaku selama sesi browser.</span>
+                    <a href="index.php?page=help">Forgot password?</a>
+                </div>
+            <?php endif; ?>
+            
+            <button class="button full auth-submit">Submit <?= icon('arrow') ?></button>
+        </form>
+        
+        <p><?= $register ? 'Sudah punya akun?' : 'Belum punya akun?' ?> <a class="text-link" href="index.php?page=<?= $register ? 'login' : 'register' ?>"><?= $register ? 'Login' : 'Register' ?></a></p>
+    </main>
+
+<?php 
+elseif ($page === 'account'):
+    $statement = db()->prepare('SELECT id, code, created_at AS created, recipient_name AS name, phone, address, subtotal, discount, total, status FROM orders WHERE user_id = ? ORDER BY id DESC');
+    $statement->execute([$_SESSION['user']['id']]);
+    $orders = $statement->fetchAll();
+    $itemStatement = db()->prepare('SELECT product_id, product_name, color, image, size, quantity, unit_price, subtotal FROM order_items WHERE order_id = ? ORDER BY id');
+    
+    foreach ($orders as &$order) {
+        $paymentQuery = db()->prepare('SELECT status, method FROM payments WHERE order_id=?');
+        $paymentQuery->execute([$order['id']]);
+        $order['payment'] = $paymentQuery->fetch();
+        $order['totals'] = ['subtotal' => (int)$order['subtotal'], 'discount' => (int)$order['discount'], 'total' => (int)$order['total']];
+        $itemStatement->execute([$order['id']]);
+        $order['rows'] = [];
+        foreach ($itemStatement->fetchAll() as $item) {
+            $order['rows'][] = [
+                'product' => [
+                    'id' => $item['product_id'], 
+                    'name' => $item['product_name'], 
+                    'color' => $item['color'], 
+                    'image' => $item['image'], 
+                    'price' => (int)$item['unit_price']
+                ], 
+                'size' => $item['size'], 
+                'qty' => (int)$item['quantity'], 
+                'subtotal' => (int)$item['subtotal']
+            ];
+        }
+    }
+    unset($order); 
+?>
+    <main class="container account">
+        <p class="eyebrow">YOUR ACCOUNT</p>
+        <div class="section-heading">
+            <div>
+                <h1>Hello, <?= e($_SESSION['user']['name']) ?>.</h1>
+                <p class="muted"><?= e($_SESSION['user']['email']) ?></p>
+            </div>
+            <form method="post">
+                <?= tokenField() ?>
+                <button class="button outline" name="action" value="logout">Logout</button>
+            </form>
+        </div>
+        
+        <h2>Riwayat pesanan</h2>
+        
+        <?php if (!$orders): ?>
+            <div class="empty">
+                <p>Belum ada pesanan. Mulai koleksi pertamamu.</p>
+                <a class="button" href="index.php?page=catalog">Shop now</a>
+            </div>
+        <?php endif; ?>
+        
+        <?php foreach ($orders as $o): ?>
+            <details class="order">
+                <summary><?= e($o['code']) ?> <span><?= rupiah($o['totals']['total']) ?></span></summary>
+                <p><?= e($o['created'] . ' · ' . $o['status']) ?></p>
+                <p>Status pembayaran: <strong><?= e(paymentLabel($o['payment']['status'] ?? 'pending')) ?></strong></p>
+                <a class="button outline" href="index.php?page=payment&amp;order=<?= (int)$o['id'] ?>"><?= ($o['payment']['status'] ?? 'pending') === 'pending' ? 'Lanjut bayar simulasi' : 'Lihat bukti simulasi' ?></a>
+                <p><?= e($o['name']) ?><br><?= nl2br(e($o['address'])) ?><br><?= e($o['phone']) ?></p>
+                
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Produk</th><th>Ukuran</th><th>Jumlah</th><th>Subtotal</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($o['rows'] as $r): ?>
+                                <tr>
+                                    <td><?= e($r['product']['name']) ?></td>
+                                    <td><?= e($r['size']) ?></td>
+                                    <td><?= $r['qty'] ?></td>
+                                    <td><?= rupiah($r['subtotal']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <p>Subtotal: <?= rupiah($o['totals']['subtotal']) ?> · Diskon: <?= rupiah($o['totals']['discount']) ?></p>
+            </details>
+        <?php endforeach; ?>
+    </main>
+
+<?php 
+elseif ($page === 'payment'): 
+    $o = $paymentOrder; 
+?>
+    <main class="container payment">
+        <p class="eyebrow">PAYMENT DEMO / DOOM REVERSAL</p>
+        <h1><?= $o['payment_status'] === 'pending' ? 'Pembayaran simulasi' : 'Bukti transaksi simulasi' ?></h1>
+        
+        <div class="notice payment-notice">Mode tugas: tidak ada transfer uang nyata, rekening asli, QR pembayaran atau koneksi gateway.</div>
+        
+        <div class="cart-layout">
+            <section>
+                <h2><?= e($o['code']) ?></h2>
+                <p>Nama penerima: <?= e($o['recipient_name']) ?></p>
+                <p class="muted">Status: <strong><?= e(paymentLabel($o['payment_status'])) ?></strong></p>
+                
+                <?php if ($o['payment_status'] === 'pending'): ?>
+                    <form class="payment-methods" method="post">
+                        <?= tokenField() ?>
+                        <input type="hidden" name="action" value="pay">
+                        <input type="hidden" name="order_id" value="<?= (int)$o['id'] ?>">
+                        <fieldset>
+                            <legend>Pilih metode demo</legend>
+                            <label>
+                                <input type="radio" name="method" value="bank" required>
+                                <span><strong>Transfer bank — simulasi</strong><small>Konfirmasi menandai pembayaran demo selesai. Tidak ada nomor rekening.</small></span>
+                            </label>
+                            <label>
+                                <input type="radio" name="method" value="ewallet" required>
+                                <span><strong>E-wallet — simulasi</strong><small>Tidak meminta PIN, OTP, atau login dompet digital.</small></span>
+                            </label>
+                            <label>
+                                <input type="radio" name="method" value="cod" required>
+                                <span><strong>COD — simulasi</strong><small>Bayar saat barang diterima. Status tetap belum lunas.</small></span>
+                            </label>
+                        </fieldset>
+                        <button class="button full">Konfirmasi metode simulasi <?= icon('arrow') ?></button>
+                    </form>
+                <?php else: ?>
+                    <dl class="receipt">
+                        <div>
+                            <dt>Metode</dt>
+                            <dd><?= e(methodLabel($o['method'])) ?></dd>
+                        </div>
+                        <div>
+                            <dt>Referensi demo</dt>
+                            <dd><?= e($o['reference']) ?></dd>
+                        </div>
+                        <div>
+                            <dt>Waktu konfirmasi bayar</dt>
+                            <dd><?= e($o['paid_at'] ?? 'Belum dibayar (COD)') ?></dd>
+                        </div>
+                    </dl>
+                    <p><?= $o['payment_status'] === 'cod_pending' ? 'COD belum berarti lunas. Demo ini belum memiliki proses penerimaan barang.' : 'Pembayaran ini hanya simulasi untuk presentasi tugas.' ?></p>
+                    <button class="button" type="button" onclick="window.print()">Cetak bukti simulasi</button>
+                <?php endif; ?>
+                
+                <p><a class="text-link" href="index.php?page=account">Kembali ke riwayat pesanan</a></p>
+            </section>
+            
+            <aside class="summary">
+                <p class="eyebrow">ORDER SUMMARY</p>
+                <dl>
+                    <div>
+                        <dt>Subtotal</dt>
+                        <dd><?= rupiah((int)$o['subtotal']) ?></dd>
+                    </div>
+                    <div>
+                        <dt>Diskon</dt>
+                        <dd>− <?= rupiah((int)$o['discount']) ?></dd>
+                    </div>
+                    <div class="grand">
+                        <dt>Total simulasi</dt>
+                        <dd><?= rupiah((int)$o['total']) ?></dd>
+                    </div>
+                </dl>
+                <p class="muted">Nominal berasal dari pesanan di database. Status pembayaran dan referensi disimpan pada tabel payments.</p>
+            </aside>
+        </div>
+    </main>
+
+<?php 
+elseif ($page === 'help'): 
+?>
+    <main class="container help">
+        <p class="eyebrow">ACCOUNT HELP</p>
+        <h1>Lupa password?</h1>
+        <p>Versi pembelajaran lokal ini belum terhubung layanan email, sehingga belum memiliki reset password otomatis.</p>
+        <p>Gunakan akun lain atau buat akun baru dengan email berbeda untuk melanjutkan demo. Jangan gunakan password akun asli untuk tugas ini.</p>
+        <a class="button" href="index.php?page=register">Buat akun demo</a>
+    </main>
+
+<?php 
+else: 
+?>
+    <main class="container empty">
+        <h1>Halaman tidak ditemukan.</h1>
+        <a class="button" href="index.php">Kembali ke beranda</a>
+    </main>
+
+<?php 
+endif; 
+
+footerView(); 
+?>
 ```
 
-Ubah host/port/user/password sesuai instalasi. Root tanpa password hanya nilai default untuk demo localhost, bukan rekomendasi server publik. Aktifkan ekstensi **pdo_mysql**. Minimum PHP 8.0 dan MySQL 5.7+/8.x atau MariaDB 10.4+. Tidak perlu Composer, npm atau framework. Apache di port 8080 memakai URL `http://localhost:8080/doom-reversal/`.
+### 2. `setup-help.php` (Error Fallback View)
+```html
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Setup database DOOM REVERSAL</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main class="container help">
+        <img src="assets/images/logo.png" alt="DOOM REVERSAL" style="width:130px;margin-bottom:35px">
+        <h1>Database belum terhubung.</h1>
+        <p>Versi ini memakai MySQL/MariaDB. Selesaikan setup berikut:</p>
+        <ol>
+            <li>Nyalakan <strong>Apache dan MySQL</strong> di XAMPP, atau Start All di Laragon.</li>
+            <li>Buka phpMyAdmin pada instalasi lokalmu.</li>
+            <li>Pilih Import, lalu import file <strong>database/doom_reversal.sql</strong> dari folder proyek. File ini membuat database dan data produk.</li>
+            <li>Periksa <strong>config/database.php</strong> jika host, port, username atau password MySQL berbeda.</li>
+            <li>Pastikan ekstensi <strong>pdo_mysql</strong> aktif.</li>
+        </ol>
+        <p>Konfigurasi awal: host 127.0.0.1, port 3306, database doom_reversal, username root, password kosong. Pesan teknis koneksi tidak ditampilkan agar kredensial tetap terlindungi.</p>
+        <a class="button" href="index.php">Coba lagi</a>
+    </main>
+</body>
+</html>
+```
 
-Jika belum terkoneksi, aplikasi menampilkan panduan setup dengan HTTP 503 tanpa membocorkan detail kredensial.
+### 3. `includes/actions.php` (Form Processing & Transactions)
+```php
+<?php
+$error = '';
 
-## Data masuk ke mana?
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validCsrf()) { 
+        http_response_code(403); 
+        $error = 'Sesi formulir kedaluwarsa. Muat ulang halaman dan coba lagi.'; 
+    } else {
+        $action = field('action');
+        try {
+            if ($action === 'add') {
+                $id = (int)field('id'); 
+                $size = field('size'); 
+                $qty = qtyValue(field('qty'));
+                
+                if (!isset($products[$id]) || !$products[$id]['available'] || !in_array($size, SIZES, true) || !$qty) {
+                    $error = 'Pilih ukuran dan jumlah 1–20.';
+                } else {
+                    $key = $id . '-' . $size; 
+                    $old = $_SESSION['cart'][$key]['qty'] ?? 0;
+                    
+                    if ($old + $qty > 20) {
+                        $error = 'Maksimal 20 produk per ukuran.';
+                    } else { 
+                        $_SESSION['cart'][$key] = ['id' => $id, 'size' => $size, 'qty' => $old + $qty]; 
+                        flash('Produk ditambahkan ke keranjang.'); 
+                        go('index.php?page=cart'); 
+                    }
+                }
+            } elseif ($action === 'update') {
+                $key = field('key'); 
+                $qty = qtyValue(field('qty'));
+                
+                if (!isset($_SESSION['cart'][$key]) || !$qty) {
+                    $error = 'Jumlah harus 1–20.';
+                } else { 
+                    $_SESSION['cart'][$key]['qty'] = $qty; 
+                    flash('Keranjang diperbarui.'); 
+                    go('index.php?page=cart'); 
+                }
+            } elseif ($action === 'remove') {
+                unset($_SESSION['cart'][field('key')]); 
+                flash('Produk dihapus.'); 
+                go('index.php?page=cart');
+            } elseif ($action === 'register') {
+                $first = field('first'); 
+                $last = field('last'); 
+                $email = strtolower(field('email')); 
+                $password = field('password');
+                
+                if ($first === '' || strlen($first) > 80 || strlen($last) > 80 || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190 || strlen($password) < 8 || strlen($password) > 72) {
+                    $error = 'Isi nama depan, email valid, dan password 8–72 karakter.';
+                } elseif ($password !== field('confirm')) {
+                    $error = 'Konfirmasi password tidak sama.';
+                } else {
+                    $statement = db()->prepare('SELECT id FROM users WHERE email = ?');
+                    $statement->execute([$email]);
+                    
+                    if ($statement->fetch()) {
+                        throw new RuntimeException('Email sudah terdaftar. Silakan login.');
+                    }
+                    
+                    $statement = db()->prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)');
+                    try { 
+                        $statement->execute([trim($first . ' ' . $last), $email, password_hash($password, PASSWORD_DEFAULT)]); 
+                    } catch (PDOException $ex) {
+                        if (($ex->errorInfo[1] ?? 0) === 1062) {
+                            throw new RuntimeException('Email sudah terdaftar. Silakan login.');
+                        }
+                        throw $ex;
+                    }
+                    
+                    $user = ['id' => (int)db()->lastInsertId(), 'name' => trim($first . ' ' . $last), 'email' => $email];
+                    session_regenerate_id(true); 
+                    unset($user['password_hash']); 
+                    $_SESSION['user'] = $user;
+                    
+                    flash('Akun berhasil dibuat. Selamat datang, ' . $user['name'] . '.'); 
+                    go('index.php?page=account');
+                }
+            } elseif ($action === 'login') {
+                $email = strtolower(field('email')); 
+                $password = field('password');
+                
+                if (($_SESSION['login_block_until'] ?? 0) > time()) {
+                    $error = 'Terlalu banyak percobaan. Coba lagi dalam satu menit.';
+                } else {
+                    $statement = db()->prepare('SELECT id, name, email, password_hash FROM users WHERE email = ?');
+                    $statement->execute([$email]);
+                    $user = $statement->fetch();
+                    
+                    if (!$user || !password_verify($password, $user['password_hash'])) {
+                        $error = 'Email atau password salah.'; 
+                        $_SESSION['login_failures'] = ($_SESSION['login_failures'] ?? 0) + 1;
+                        
+                        if ($_SESSION['login_failures'] >= 5) { 
+                            $_SESSION['login_block_until'] = time() + 60; 
+                            $_SESSION['login_failures'] = 0; 
+                        }
+                    } else {
+                        session_regenerate_id(true); 
+                        unset($user['password_hash']); 
+                        $_SESSION['user'] = $user; 
+                        $_SESSION['login_failures'] = 0;
+                        
+                        flash('Berhasil login.'); 
+                        go('index.php?page=account');
+                    }
+                }
+            } elseif ($action === 'logout') {
+                unset($_SESSION['user']); 
+                session_regenerate_id(true); 
+                flash('Kamu sudah logout.'); 
+                go('index.php');
+            } elseif ($action === 'checkout') {
+                $rows = cartRows(); 
+                $name = field('name'); 
+                $address = field('address'); 
+                $phone = field('phone');
+                
+                if (empty($_SESSION['user'])) { 
+                    flash('Login dulu untuk checkout.'); 
+                    go('index.php?page=login'); 
+                }
+                if (!$rows) {
+                    $error = 'Keranjang masih kosong.';
+                } elseif (strlen($name) < 2 || strlen($name) > 100 || strlen($address) < 10 || strlen($address) > 1000 || !preg_match('/^[0-9+ ()-]{8,20}$/', $phone)) {
+                    $error = 'Isi nama, nomor telepon valid, dan alamat lengkap minimal 10 karakter.';
+                } else {
+                    $connection = db();
+                    $connection->beginTransaction();
+                    try {
+                        $check = $connection->prepare('SELECT id FROM orders WHERE code = ?');
+                        do {
+                            $code = 'DR-' . date('ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
+                            $check->execute([$code]);
+                            $exists = (bool)$check->fetch();
+                        } while ($exists);
+                        
+                        $total = totals($rows);
+                        $statement = $connection->prepare('INSERT INTO orders (code, user_id, recipient_name, phone, address, subtotal, discount, total, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                        $statement->execute([$code, $_SESSION['user']['id'], $name, $phone, $address, $total['subtotal'], $total['discount'], $total['total'], 'Simulasi - tidak ada pembayaran']);
+                        
+                        $orderId = (int)$connection->lastInsertId();
+                        $itemStatement = $connection->prepare('INSERT INTO order_items (order_id, product_id, product_name, color, image, size, quantity, unit_price, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                        
+                        for ($i = 0; $i < count($rows); $i++) {
+                            $r = $rows[$i]; 
+                            $p = $r['product'];
+                            $itemStatement->execute([$orderId, $p['id'], $p['name'], $p['color'], $p['image'], $r['size'], $r['qty'], $p['price'], $r['subtotal']]);
+                        }
+                        
+                        $paymentStatement = $connection->prepare('INSERT INTO payments (order_id, amount, status) VALUES (?, ?, ?)');
+                        $paymentStatement->execute([$orderId, $total['total'], 'pending']);
+                        
+                        $connection->commit();
+                    } catch (Throwable $ex) {
+                        if ($connection->inTransaction()) {
+                            $connection->rollBack();
+                        }
+                        throw $ex;
+                    }
+                    
+                    $_SESSION['cart'] = []; 
+                    flash('Pesanan ' . $code . ' tersimpan. Lanjut pilih pembayaran simulasi.'); 
+                    go('index.php?page=payment&order=' . $orderId);
+                }
+            } elseif ($action === 'pay') {
+                if (empty($_SESSION['user'])) { 
+                    flash('Login dulu untuk pembayaran.'); 
+                    go('index.php?page=login'); 
+                }
+                
+                $orderId = (int)field('order_id'); 
+                $method = field('method');
+                
+                if (!in_array($method, ['bank', 'ewallet', 'cod'], true)) {
+                    $error = 'Pilih metode pembayaran simulasi.';
+                } else {
+                    $connection = db(); 
+                    $connection->beginTransaction();
+                    try {
+                        $statement = $connection->prepare('SELECT o.id, o.total, p.status FROM orders o JOIN payments p ON p.order_id=o.id WHERE o.id=? AND o.user_id=? FOR UPDATE');
+                        $statement->execute([$orderId, $_SESSION['user']['id']]);
+                        $payment = $statement->fetch();
+                        
+                        if (!$payment) {
+                            throw new RuntimeException('Pesanan tidak ditemukan.');
+                        }
+                        if ($payment['status'] !== 'pending') {
+                            throw new RuntimeException('Pembayaran pesanan ini sudah dikonfirmasi.');
+                        }
+                        
+                        $reference = 'DEMO-' . strtoupper(bin2hex(random_bytes(8)));
+                        $status = $method === 'cod' ? 'cod_pending' : 'paid_demo';
+                        
+                        $statement = $connection->prepare('UPDATE payments SET method=?, amount=?, status=?, reference=?, paid_at=? WHERE order_id=? AND status=?');
+                        $statement->execute([$method, (int)$payment['total'], $status, $reference, $method === 'cod' ? null : date('Y-m-d H:i:s'), $orderId, 'pending']);
+                        
+                        $statement = $connection->prepare('UPDATE orders SET status=? WHERE id=?');
+                        $statement->execute([$method === 'cod' ? 'Simulasi COD - bayar saat diterima' : 'Pembayaran simulasi selesai', $orderId]);
+                        
+                        $connection->commit();
+                    } catch (Throwable $ex) {
+                        if ($connection->inTransaction()) {
+                            $connection->rollBack();
+                        }
+                        throw $ex;
+                    }
+                    
+                    flash($method === 'cod' ? 'COD simulasi dikonfirmasi. Status belum lunas.' : 'Pembayaran simulasi berhasil. Tidak ada uang nyata yang diproses.');
+                    go('index.php?page=payment&order=' . $orderId);
+                }
+            }
+        } catch (Throwable $ex) { 
+            $error = ($ex instanceof RuntimeException && !($ex instanceof PDOException)) ? $ex->getMessage() : 'Data belum bisa diproses. Periksa koneksi dan struktur database, lalu coba lagi.'; 
+        }
+    }
+}
+```
 
-| Aktivitas | Lokasi data | Penjelasan |
-|---|---|---|
-| Register | tabel `users` | Nama, email unik, hash password, waktu pembuatan |
-| Login | membaca `users`, lalu session PHP | Status login berupa user di session. Tidak ada tabel log login terpisah |
-| Produk | tabel `products` | Katalog, kategori, warna, harga, nama gambar, metadata available |
-| Keranjang | session PHP | ID produk, ukuran dan qty. Belum disimpan sebagai tabel cart |
-| Checkout | tabel `orders` | Kode, pemilik, penerima, alamat, subtotal, diskon dan total |
-| Pembayaran | tabel `payments` | Metode demo, nominal, status, reference dan paid_at |
-| Isi pesanan | tabel `order_items` | Produk, ukuran, qty, snapshot nama/harga, subtotal tiap baris |
-| Logout | session PHP | Menghapus user dari session, tidak menghapus akun/pesanan |
+### 4. `includes/products.php` (Product Data Initialization)
+```php
+<?php
+$products = [];
+$statement = db()->query('SELECT id, name, category, color, price, image, available FROM products ORDER BY id');
 
-Lihat data melalui phpMyAdmin > database **doom_reversal** > tabel > Browse/Jelajahi. Password disimpan sebagai hash, bukan teks asli. Keranjang dan status login tidak muncul sebagai tabel MySQL karena merupakan data sesi sementara di server PHP. Browser hanya membawa cookie ID sesi.
+foreach ($statement->fetchAll() as $product) {
+    $product['id'] = (int)$product['id'];
+    $product['price'] = (int)$product['price'];
+    $product['available'] = (bool)$product['available'];
+    $products[$product['id']] = $product;
+}
 
-Foreign key: `orders.user_id` mengarah ke `users.id`. `order_items.order_id` mengarah ke `orders.id`. `order_items.product_id` mengarah ke `products.id`. Nama, warna, gambar dan harga pada order_items adalah snapshot agar riwayat tetap menjelaskan produk saat dipesan.
+const SIZES = ['S', 'M', 'L', 'XL'];
+```
 
-SQL memakai InnoDB agar foreign key dan transaksi bekerja. Import ulang memakai CREATE IF NOT EXISTS dan seed yang mempertahankan row produk yang sudah ada, bukan menghapus akun atau pesanan. File SQL ini bukan migrasi dari database dengan struktur berbeda.
+### 5. `includes/bootstrap.php` (Core Helpers & Session Config)
+```php
+<?php
+declare(strict_types=1);
 
-## Fitur dan batasnya
+session_set_cookie_params([
+    'httponly' => true,
+    'samesite' => 'Lax',
+    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+]);
+session_name('DOOMREVERSALSESSID');
+session_start();
+date_default_timezone_set('Asia/Jakarta');
 
-- 13 produk: enam Men, enam Women, satu Pants. Kids “segera hadir”.
-- Pencarian nama/warna, kategori, pengurutan, pagination enam produk.
-- Detail produk, ukuran S/M/L/XL, qty 1–20, accordion dan panduan ukuran ilustratif.
-- Register, login/logout, akun dan riwayat milik pengguna.
-- Keranjang berdasarkan ID+ukuran, update/hapus, laporan dan cetak lewat browser.
-- Diskon 10% bila subtotal minimal Rp 900.000. Tiga produk @Rp 300.000 menghasilkan diskon Rp 90.000 dan total Rp 810.000.
-- Checkout memvalidasi data penerima lalu menyimpan orders dan order_items dalam **satu transaksi**. Commit sukses mengosongkan cart, kegagalan memakai rollback dan cart tetap ada.
-- CSS responsif dan show/hide password; semua aset lokal.
+require __DIR__ . '/database.php';
 
-Tidak ada pembayaran, pengiriman, stok nyata, admin, ulasan, reset password via email atau remember-me persisten. `available` adalah metadata produk, bukan jumlah stok. Keranjang belum persisten lintas sesi/perangkat. Foto dari UI berlogo Nike, sedangkan nama toko mengikuti mockup DOOM REVERSAL, bukan klaim produk resmi. Panduan ukuran dan marketing merupakan contoh tugas.
+try { 
+    require __DIR__ . '/products.php'; 
+} catch (Throwable $ex) {
+    http_response_code(503);
+    require __DIR__ . '/setup-help.php';
+    exit;
+}
 
-Versi file JSON sebelumnya tidak digunakan lagi. Jika sudah membuat akun/pesanan pada versi lama, data itu tidak otomatis masuk ke MySQL. Buat ulang akun demo atau lakukan migrasi terpisah jika datanya perlu dipertahankan. Jangan hapus data lama sebelum memastikan kebutuhan migrasi.
+const DISCOUNT_RATE = 0.10;
+const DISCOUNT_THRESHOLD = 900000;
 
-## Struktur source
+function e($text): string { 
+    return htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8'); 
+}
 
-- `index.php`: routing sederhana, halaman dan riwayat.
-- `config/database.php`: parameter koneksi SQL.
-- `database/doom_reversal.sql`: schema dan data produk awal.
-- `includes/database.php`: koneksi PDO MySQL.
-- `includes/bootstrap.php`: session, CSRF, helper dan perhitungan.
-- `includes/products.php`: SELECT katalog SQL, hasilnya menjadi array.
-- `includes/actions.php`: register/login, keranjang, transaksi checkout.
-- `includes/layout.php`: header, footer dan kartu produk.
-- `includes/setup-help.php`: petunjuk jika database belum siap.
-- `assets/`: CSS, JS, gambar lokal.
+function rupiah(int $amount): string { 
+    return 'Rp ' . number_format($amount, 0, ',', '.'); 
+}
 
-## Penerapan materi
+function go(string $url): void { 
+    header('Location: ' . $url); 
+    exit; 
+}
 
-| Pertemuan | Penerapan |
-|---|---|
-| 1 | PHP server-side, HTML dinamis, localhost, index.php |
-| 2 | Fungsi prosedural dan include modular |
-| 3 | Variabel, array hasil query, string, integer, boolean dan konstanta float |
-| 4 | Perkalian subtotal, +=, syarat >=, trim, strtolower, stripos, htmlspecialchars |
-| 5 | WHILE pada cartRows() |
-| 6 | DO-WHILE untuk kandidat kode pesanan sampai tidak bentrok |
-| 7 | FOR pada total, katalog/laporan; nested FOR tabel ukuran; pagination |
+function flash(string $text): void { 
+    $_SESSION['flash'] = $text; 
+}
 
-Database PDO ditambahkan sesuai permintaan versi SQL. Proyek ini menerapkan materi ke toko, bukan mengerjakan semua latihan PDF sebagai halaman terpisah.
+function csrf(): string { 
+    if (empty($_SESSION['csrf'])) {
+        $_SESSION['csrf'] = bin2hex(random_bytes(32)); 
+    }
+    return $_SESSION['csrf']; 
+}
 
-## Keamanan dasar
+function tokenField(): string { 
+    return '<input type="hidden" name="csrf" value="' . e(csrf()) . '">'; 
+}
 
-Koneksi PDO memakai utf8mb4, exception mode dan native prepared statements. Query berinput pengguna memakai placeholder; email dan kode order mempunyai unique index. Password memakai password_hash dan password_verify. Session ID diperbarui setelah autentikasi/logout. Form POST memakai token CSRF, output pengguna di-escape, harga dari katalog server dan jumlah divalidasi server. Transaksi checkout menjaga header serta detail pesanan tersimpan bersama.
+function validCsrf(): bool { 
+    return is_string($_POST['csrf'] ?? null) && hash_equals(csrf(), $_POST['csrf']); 
+}
 
-Batas: rate limit login per sesi mudah dilewati melalui sesi baru, field password di-trim, batas strlen menghitung byte, serta kredensial default khusus lokal. Tidak ada backup/migrasi otomatis. Belum layak untuk layanan transaksi publik.
+function field(string $name): string { 
+    return is_string($_POST[$name] ?? null) ? trim($_POST[$name]) : ''; 
+}
 
-## Demo singkat
+function qtyValue($value): int { 
+    return filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 20]]) ?: 0; 
+}
 
-1. Import SQL lalu buka web. Jika database belum siap, baca petunjuk setup.
-2. Register akun demo. Pastikan row muncul pada users di phpMyAdmin.
-3. Cari Lilac, pilih ukuran M qty 2, tambahkan ukuran L qty 1.
-4. Cek subtotal Rp 900.000, diskon Rp 90.000, total Rp 810.000.
-5. Tampilkan laporan keranjang.
-6. Checkout memakai alamat contoh. Cek row baru pada orders dan dua row pada order_items.
-7. Login akun berbeda: pesanan akun pertama tidak boleh muncul.
+function cartRows(): array {
+    global $products; 
+    $rows = []; 
+    $cart = $_SESSION['cart'] ?? [];
+    
+    $keys = array_keys($cart); 
+    $i = 0;
+    
+    while ($i < count($keys)) {
+        $key = $keys[$i]; 
+        $entry = $cart[$key];
+        
+        if (isset($products[$entry['id']])) {
+            $rows[] = [
+                'key' => $key,
+                'product' => $products[$entry['id']],
+                'size' => $entry['size'],
+                'qty' => $entry['qty'],
+                'subtotal' => $products[$entry['id']]['price'] * $entry['qty']
+            ];
+        }
+        $i++;
+    }
+    return $rows;
+}
 
-## Troubleshooting
+function totals(array $rows): array {
+    $subtotal = 0; 
+    
+    for ($i = 0; $i < count($rows); $i++) {
+        $subtotal += $rows[$i]['subtotal'];
+    }
+    
+    $discount = $subtotal >= DISCOUNT_THRESHOLD ? (int)round($subtotal * DISCOUNT_RATE) : 0;
+    
+    return [
+        'subtotal' => $subtotal,
+        'discount' => $discount,
+        'total' => $subtotal - $discount
+    ];
+}
 
-- 503/setup: MySQL belum aktif, schema belum diimport, kredensial salah, port beda, atau pdo_mysql belum aktif.
-- 404: periksa folder proyek tidak berlapis setelah ekstrak.
-- 500 .htaccess: jika Apache memblok Options, hapus baris `Options -Indexes` pada .htaccess root.
-- CSRF kedaluwarsa: reload form dan pastikan cookie diaktifkan.
-- Gambar hilang setelah edit produk: image berisi nama file lokal, bukan path absolut atau URL sembarang.
-- Forgot password membuka penjelasan karena layanan reset email belum tersedia.
+function icon(string $name): string {
+    $paths = [
+        'search' => '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+        'user' => '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="9" r="3"/><path d="M6 19c1-6 11-6 12 0"/>',
+        'cart' => '<path d="M2 3h3l2 13h13l2-9H6"/><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/>',
+        'arrow' => '<path d="M4 12h16m-6-6 6 6-6 6"/>'
+    ];
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">' . ($paths[$name] ?? '') . '</svg>';
+}
 
-## Referensi
+function paymentLabel(string $status): string {
+    return [
+        'pending' => 'Menunggu pembayaran simulasi',
+        'paid_demo' => 'Lunas (simulasi)',
+        'cod_pending' => 'COD - belum dibayar'
+    ][$status] ?? 'Status tidak dikenal';
+}
 
-Materi utama: tujuh PDF PBW dan UI pada ZIP pengguna. Dokumentasi resmi:
-- https://www.php.net/manual/en/pdo.prepare.php
-- https://www.php.net/manual/en/pdo.begintransaction.php
-- https://www.php.net/manual/en/function.session-start.php
-- https://www.php.net/manual/en/function.password-hash.php
-- https://www.php.net/manual/en/function.password-verify.php
-- https://www.php.net/manual/en/function.htmlspecialchars.php
+function methodLabel(?string $method): string {
+    return [
+        'bank' => 'Transfer bank (demo)',
+        'ewallet' => 'E-wallet (demo)',
+        'cod' => 'COD (demo)'
+    ][$method ?? ''] ?? 'Belum dipilih';
+}
+```
 
-## Pembayaran setelah checkout
+### 6. `includes/layout.php` (Modular UI Components)
+```php
+<?php
+function headerView(string $page): void { 
+    $count = 0; 
+    foreach (cartRows() as $r) {
+        $count += $r['qty']; 
+    }
+?>
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="DOOM REVERSAL — koleksi hoodie dan everyday essentials. Proyek PHP lokal.">
+    <title>DOOM REVERSAL — <?= e(ucfirst($page)) ?></title>
+    <link rel="stylesheet" href="assets/style.css">
+    <script src="assets/app.js" defer></script>
+</head>
+<body>
+<header class="header">
+    <a class="brand" href="index.php" aria-label="DOOM REVERSAL beranda">
+        <img src="assets/images/logo.png" alt="DOOM REVERSAL">
+    </a>
+    <nav aria-label="Koleksi utama">
+        <?php foreach (['Men', 'Women', 'Pants', 'Kids'] as $cat): ?>
+            <a class="<?= ($_GET['category'] ?? '') === $cat ? 'active' : '' ?>" href="index.php?page=catalog&amp;category=<?= $cat ?>"><?= $cat ?></a>
+        <?php endforeach; ?>
+    </nav>
+    <div class="tools">
+        <a href="index.php?page=catalog&amp;search=1" aria-label="Cari produk"><?= icon('search') ?></a>
+        <a href="index.php?page=<?= isset($_SESSION['user']) ? 'account' : 'login' ?>" aria-label="Akun"><?= icon('user') ?></a>
+        <a href="index.php?page=cart" aria-label="Keranjang, <?= $count ?> barang">
+            <?= icon('cart') ?>
+            <?php if ($count): ?>
+                <span class="badge"><?= $count ?></span>
+            <?php endif; ?>
+        </a>
+    </div>
+</header>
 
-Checkout membuat order, detail dan satu payments pending dalam satu transaksi. Browser langsung menuju halaman pembayaran. Pilih transfer bank demo, e-wallet demo atau COD demo. Bank/e-wallet menjadi `paid_demo` setelah konfirmasi, sementara COD menjadi `cod_pending`, **belum lunas**. Tidak ada nomor rekening, QR bayar, PIN/OTP atau proses uang nyata.
+<?php if (!empty($_SESSION['flash'])): ?>
+    <div role="status" class="notice"><?= e($_SESSION['flash']) ?></div>
+    <?php unset($_SESSION['flash']); ?>
+<?php endif; ?>
 
-Nominal mengambil orders.total dari server. Halaman hanya untuk pemilik order. Konfirmasi memakai CSRF dan transaksi dengan SELECT FOR UPDATE. Status harus pending; request berulang tidak membuat pembayaran kedua. Tabel payments mempunyai unique order_id. Bukti simulasi mencantumkan reference DEMO dan dapat dicetak. Pembayaran tertunda dapat dilanjutkan dari riwayat akun.
+<?php 
+}
 
-Import ulang SQL juga membuat tabel payments dan mengisi pembayaran pending untuk pesanan SQL lama yang belum mempunyai row payment. Data akun/pesanan lama tidak dihapus.
+function footerView(): void { 
+?>
+<footer class="footer">
+    <div>
+        <p>“When the end feels near, turn it around and start again.”</p>
+        <a class="footer-link" href="index.php?page=catalog">Explore the collection <?= icon('arrow') ?></a>
+    </div>
+    <div class="footer-bottom">
+        <img src="assets/images/logo.png" alt="DOOM REVERSAL">
+        <p>© <?= date('Y') ?> DOOM REVERSAL. All rights reserved.</p>
+        <span>Proyek pembelajaran · Checkout simulasi</span>
+    </div>
+</footer>
+</body>
+</html>
+<?php 
+}
 
-## Verifikasi versi final
+function card(array $p): void { 
+?>
+<article class="card">
+    <a href="index.php?page=product&amp;id=<?= $p['id'] ?>">
+        <div class="card-image">
+            <img loading="lazy" src="assets/images/<?= e($p['image']) ?>" alt="<?= e($p['name'] . ' — ' . $p['color']) ?>">
+            <span>VIEW PRODUCT <?= icon('arrow') ?></span>
+        </div>
+        <div class="card-info">
+            <h3><?= e($p['name']) ?></h3>
+            <p class="price"><?= rupiah($p['price']) ?></p>
+            <small><?= e($p['category'] . ' / ' . $p['color']) ?></small>
+            <div class="swatches" aria-label="Warna produk">
+                <i style="background:<?= e(['Lilac' => '#9396ba', 'Stone' => '#716b61', 'Burgundy' => '#582a35', 'Black' => '#222', 'Navy' => '#314756', 'Olive' => '#7b8260', 'Forest' => '#233a36', 'Sand' => '#b6b49e', 'Pink' => '#e38cc0'][$p['color']] ?? '#222') ?>"></i>
+            </div>
+        </div>
+    </a>
+</article>
+<?php 
+} 
+?>
+```
 
-Diuji memakai PHP 8.3 dan MariaDB 10.11 lokal: import schema lima tabel, 13 produk, register/login/logout, email duplikat, hashing, keranjang, diskon, checkout, pembatasan riwayat antar akun, pembayaran bank demo, COD belum lunas, konfirmasi ulang, query login dengan input SQL injection, serta import ulang yang mempertahankan data. Uji kegagalan INSERT detail secara sengaja memastikan transaksi rollback tanpa meninggalkan header order/payments dan keranjang tetap ada. Semua file PHP lulus syntax check.
+### 7. `includes/database.php` (PDO Singleton Connection)
+```php
+<?php
+declare(strict_types=1);
 
-Pengujian ini tidak menjalankan XAMPP/Laragon Windows secara langsung. Layout responsif web belum diverifikasi visual lewat browser. PPT dan PDF sudah dirender untuk pemeriksaan layout. Dokumen presentasi berada pada folder `docs` dalam paket ini.
+function db(): PDO {
+    static $connection = null;
+    if ($connection === null) {
+        $host = '127.0.0.1';
+        $port = '3306';
+        $database = 'doom_reversal';
+        $username = 'root';
+        $password = '';
+
+        $dsn = "mysql:host=$host;port=$port;dbname=$database;charset=utf8mb4";
+        
+        $connection = new PDO($dsn, $username, $password, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    }
+    return $connection;
+}
+```
+
+---
+
+## 🛡️ Lisensi
+
+Proyek ini dikembangkan untuk keperluan pembelajaran akademik mata kuliah Pemrograman Berbasis Web. Seluruh hak cipta desain dan aset ilustrasi disesuaikan untuk kebutuhan edukasi.
